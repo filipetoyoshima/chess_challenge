@@ -20,7 +20,7 @@ class Piece(models.Model):
     x_coord = models.IntegerField()
     y_coord = models.IntegerField()
 
-    def __repr__(self):
+    def get_values(self):
         return {
             'id': self.id,
             'type': self.type,
@@ -32,6 +32,9 @@ class Piece(models.Model):
             'y_coord': self.y_coord,
             'y_coord_display': self.y_coord + 1,
         }
+
+    def __repr__(self):
+        return str(self.get_values())
 
     def __str__(self):
         color = 'White' if self.color else 'Black'
