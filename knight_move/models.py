@@ -14,6 +14,7 @@ COLOR_CHOICES = (
     (False, 'Black'),
 )
 
+
 class Piece(models.Model):
     type = models.CharField(max_length=1, choices=PIECE_CHOICES)
     color = models.BooleanField(choices=COLOR_CHOICES)
