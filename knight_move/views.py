@@ -22,9 +22,9 @@ def get_board(request, type='string'):
     if request.method != 'GET':
         return HttpResponse(status=405)
     pieces = Piece.objects.all()
-    matrix = [[f'{x}{y}' for x in range(8)] for y in range(8)]
+    matrix = [[f'__' for x in range(8)] for y in range(8)]
     for piece in pieces:
-        matrix[piece.x_coord][7 - piece.y_coord] = f'{"w" if piece.color else "b"}{piece.type}'
+        matrix[7 - piece.y_coord][piece.x_coord] = f'{"w" if piece.color else "b"}{piece.type.upper()}'
     
     if type == 'string':
         return HttpResponse(status=200, content=f'\n'.join([' '.join(row) for row in matrix]))
