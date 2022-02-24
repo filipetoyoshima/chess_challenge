@@ -1,18 +1,22 @@
 from django.db import models
 
+PIECE_CHOICES = (
+    ('k', 'King'),
+    ('q', 'Queen'),
+    ('r', 'Rook'),
+    ('b', 'Bishop'),
+    ('n', 'Knight'),
+    ('p', 'Pawn'),
+)
+
+COLOR_CHOICES = (
+    (True, 'White'),
+    (False, 'Black'),
+)
+
 class Piece(models.Model):
-    type = models.CharField(max_length=1, choices=([
-        ('k', 'King'),
-        ('q', 'Queen'),
-        ('r', 'Rook'),
-        ('b', 'Bishop'),
-        ('n', 'Knight'),
-        ('p', 'Pawn'),
-    ]))
-    color = models.BooleanField(choices=([
-        (True, 'White'),
-        (False, 'Black'),
-    ]))
+    type = models.CharField(max_length=1, choices=PIECE_CHOICES)
+    color = models.BooleanField(choices=COLOR_CHOICES)
     x_coord = models.IntegerField()
     y_coord = models.IntegerField()
 
