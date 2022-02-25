@@ -15,7 +15,7 @@ def register_piece(request):
             content='Piece already exists at this location'
         )
     piece = Piece.objects.create(**body)
-    return HttpResponse(status=201, content=json.dumps(piece.__repr__()))
+    return HttpResponse(status=201, content=json.dumps(piece.get_values()))
 
 
 def get_board(request, type='string'):
@@ -47,8 +47,9 @@ def get_horse_movements(
         return HttpResponse(status=405)
 
     if origin.isdigit():
-        piece = Piece.objects.get(id=origin)
-        if not piece:
+        try:
+            piece = Piece.objects.get(id=origin)
+        except Piece.DoesNotExist:
             return HttpResponse(status=404, content='Piece not found')
         if piece.type != 'n' and not force_origin:
             return HttpResponse(status=400, content='Piece is not a knight')
