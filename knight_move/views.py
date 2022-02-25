@@ -107,10 +107,10 @@ def get_knight_movements(
             ]
 
         return HttpResponse(status=200, content=json.dumps(valid_movements))
-    
+
     except Exception:  # pragma: no cover
         return HttpResponse(status=500, content='Internal server error')
-    
+
     # if I knew what exception to catch, I would have caught it propperly
     # since this code is designed to catch unexpected exceptions,
     # I cant test it
