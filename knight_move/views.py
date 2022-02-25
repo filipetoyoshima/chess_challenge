@@ -38,13 +38,18 @@ def get_board(request, type='string'):
 def get_knight_movements(
     request, origin
 ):
+    if request.method != 'GET':
+        return HttpResponse(status=405)
+
     force_origin = request.GET.get('force_origin', False) == 'true'
     allow_capture = request.GET.get('allow_capture', False) == 'true'
     natural_notation = request.GET.get('natural_notation', False) == 'true'
     steps = int(request.GET.get('steps', '1'))
 
-    if request.method != 'GET':
-        return HttpResponse(status=405)
+    if steps > 10:
+        return HttpResponse(status=400, content=(
+            'Too many steps. Do wanna broke me, mate? Try with less then 10'
+        ))
 
     if origin.isdigit():
         try:

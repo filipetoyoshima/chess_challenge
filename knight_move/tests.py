@@ -293,3 +293,9 @@ class KnightMoveTestCase(TestCase):
         for valid_movement in response_body:
             self.assertIn(valid_movement, expected_answer)
         self.assertEqual(len(response_body), len(expected_answer))
+
+    def test_knight_moves_too_much_steps(self):
+        response = self.client.get(
+            '/knight_move/get_knight_movements/1?steps=11'
+        )
+        self.assertEqual(response.status_code, 400)
