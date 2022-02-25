@@ -51,6 +51,11 @@ def get_knight_movements(
             'Too many steps. Do wanna broke me, mate? Try with less then 10'
         ))
 
+    if steps < 1:
+        return HttpResponse(status=400, content=(
+            'Steps must be greater than 0'
+        ))
+
     if origin.isdigit():
         try:
             piece = Piece.objects.get(id=origin)
