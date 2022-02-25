@@ -3,10 +3,6 @@ import json
 from .models import Piece
 
 
-def index(request):
-    return HttpResponse("Hello, world. You're at the knight_move index.")
-
-
 def register_piece(request):
     if request.method != 'POST':
         return HttpResponse(status=405)
