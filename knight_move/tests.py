@@ -305,3 +305,9 @@ class KnightMoveTestCase(TestCase):
             '/knight_move/get_knight_movements/1?steps=-1'
         )
         self.assertEqual(response.status_code, 400)
+
+    def test_knight_moves_invalid_steps(self):
+        response = self.client.get(
+            '/knight_move/get_knight_movements/1?steps=a'
+        )
+        self.assertEqual(response.status_code, 400)

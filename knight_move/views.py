@@ -38,67 +38,82 @@ def get_board(request, type='string'):
 def get_knight_movements(
     request, origin
 ):
-    if request.method != 'GET':
-        return HttpResponse(status=405)
+    try:
+        if request.method != 'GET':
+            return HttpResponse(status=405)
 
-    force_origin = request.GET.get('force_origin', False) == 'true'
-    allow_capture = request.GET.get('allow_capture', False) == 'true'
-    natural_notation = request.GET.get('natural_notation', False) == 'true'
-    steps = int(request.GET.get('steps', '1'))
-
-    if steps > 10:
-        return HttpResponse(status=400, content=(
-            'Too many steps. Do wanna broke me, mate? Try with less then 10'
-        ))
-
-    if steps < 1:
-        return HttpResponse(status=400, content=(
-            'Steps must be greater than 0'
-        ))
-
-    if origin.isdigit():
+        force_origin = request.GET.get('force_origin', False) == 'true'
+        allow_capture = request.GET.get('allow_capture', False) == 'true'
+        natural_notation = request.GET.get('natural_notation', False) == 'true'
         try:
-            piece = Piece.objects.get(id=origin)
-        except Piece.DoesNotExist:
-            return HttpResponse(status=404, content='Piece not found')
-        if piece.type != 'n' and not force_origin:
-            return HttpResponse(status=400, content='Piece is not a knight')
-        x = piece.x_coord
-        y = piece.y_coord
-        originColor = 'w' if piece.color else 'b'
+            steps = int(request.GET.get('steps', '1'))
+        except ValueError:
+            return HttpResponse(status=400, content='Invalid steps')
 
-    elif (origin[0] in 'wb' and
-          origin[1] in 'abcdefghABCDEFGH' and
-          origin[2] in '12345678'):
-        if origin[1].isupper():
-            x = ord(origin[1]) - ord('A')
+        if steps > 10:
+            return HttpResponse(status=400, content=(
+                'Too many steps. Do wanna broke me, mate?'
+                'Try with less then 10'
+            ))
+
+        if steps < 1:
+            return HttpResponse(status=400, content=(
+                'Steps must be greater than 0'
+            ))
+
+        if origin.isdigit():
+            try:
+                piece = Piece.objects.get(id=origin)
+            except Piece.DoesNotExist:
+                return HttpResponse(status=404, content='Piece not found')
+            if piece.type != 'n' and not force_origin:
+                return HttpResponse(
+                    status=400,
+                    content='Piece is not a knight'
+                )
+            x = piece.x_coord
+            y = piece.y_coord
+            originColor = 'w' if piece.color else 'b'
+
+        elif (origin[0] in 'wb' and
+              origin[1] in 'abcdefghABCDEFGH' and
+              origin[2] in '12345678'):
+            if origin[1].isupper():
+                x = ord(origin[1]) - ord('A')
+            else:
+                x = ord(origin[1]) - ord('a')
+            y = int(origin[2]) - 1
+            originColor = origin[0]
+
+        elif (origin[0] in 'abcdefghABCDEFGH' and origin[1] in '12345678'):
+            if origin[0].isupper():
+                x = ord(origin[0]) - ord('A')
+            else:
+                x = ord(origin[0]) - ord('a')
+            y = int(origin[1]) - 1
+            originColor = 'other'  # allow capture for any color
+
         else:
-            x = ord(origin[1]) - ord('a')
-        y = int(origin[2]) - 1
-        originColor = origin[0]
+            return HttpResponse(status=400, content='Invalid origin')
 
-    elif (origin[0] in 'abcdefghABCDEFGH' and origin[1] in '12345678'):
-        if origin[0].isupper():
-            x = ord(origin[0]) - ord('A')
-        else:
-            x = ord(origin[0]) - ord('a')
-        y = int(origin[1]) - 1
-        originColor = 'other'  # allow capture for any color
+        piece_matrix = generate_board_matrix()
+        valid_movements = calc_horse_movement(
+            x, y, piece_matrix, allow_capture, steps, originColor
+        )
 
-    else:
-        return HttpResponse(status=400, content='Invalid origin')
+        if natural_notation:
+            valid_movements = [
+                (chr(x + ord('A')), y + 1) for (x, y) in valid_movements
+            ]
 
-    piece_matrix = generate_board_matrix()
-    valid_movements = calc_horse_movement(
-        x, y, piece_matrix, allow_capture, steps, originColor
-    )
-
-    if natural_notation:
-        valid_movements = [
-            (chr(x + ord('A')), y + 1) for (x, y) in valid_movements
-        ]
-
-    return HttpResponse(status=200, content=json.dumps(valid_movements))
+        return HttpResponse(status=200, content=json.dumps(valid_movements))
+    
+    except Exception:  # pragma: no cover
+        return HttpResponse(status=500, content='Internal server error')
+    
+    # if I knew what exception to catch, I would have caught it propperly
+    # since this code is designed to catch unexpected exceptions,
+    # I cant test it
 
 
 def calc_horse_movement(
