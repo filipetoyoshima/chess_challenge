@@ -42,12 +42,16 @@ def get_board(request, type='string'):
 def get_horse_movements(
     request, piece_id
 ):
-    force_origin = request.GET.get('force_origin', False)
-    allow_capture = request.GET.get('allow_capture', False)
-    natural_notation = request.GET.get('natural_notation', False)
-    steps = 0
+    force_origin = request.GET.get('force_origin', False) == 'true'
+    allow_capture = request.GET.get('allow_capture', False) == 'true'
+    natural_notation = request.GET.get('natural_notation', False) == 'true'
+    steps = int(request.GET.get('steps', '1'))
+
+    print(allow_capture)
+
     if request.method != 'GET':
         return HttpResponse(status=405)
+
     piece = Piece.objects.get(id=piece_id)
     if not piece:
         return HttpResponse(status=404, content='Piece not found')
@@ -71,9 +75,8 @@ def get_horse_movements(
 
 
 def calc_horse_movement(
-    x, y, piece_matrix, allow_capture=False, remmaing_steps=0, originColor='w'
+    x, y, piece_matrix, allow_capture=False, remmaing_steps=1, originColor='w'
 ):
-    print(x, y)
     _piece_matrix = piece_matrix.copy()
     valid_movements = []
     for x_offset, y_offset in [
@@ -82,9 +85,6 @@ def calc_horse_movement(
         x_destination = x + x_offset
         y_destination = y + y_offset
         if 0 <= x_destination <= 7 and 0 <= y_destination <= 7:
-            print(f'{x} -> {x_destination}')
-            print(f'{y} -> {y_destination}')
-            print('-' * 20)
             if _piece_matrix[y_destination][x_destination] == '__':
                 valid_movements.append((x_destination, y_destination))
             elif (allow_capture and
@@ -92,9 +92,22 @@ def calc_horse_movement(
                    originColor)):
                 valid_movements.append((x_destination, y_destination))
 
-    return valid_movements
+    # just for the record: this elif is horrible, but flake8 seems to like it
 
-# just for the record: this elif is horrible, but flake8 seems to like it
+    if remmaing_steps > 1:
+        next_moviments = []
+        for movement in valid_movements:
+            _new_piece_matrix = piece_matrix.copy()
+            _new_piece_matrix[x][y] = '__'
+            more_possible_moves = calc_horse_movement(
+                movement[0], movement[1], _piece_matrix, allow_capture,
+                remmaing_steps - 1, originColor
+            )
+            next_moviments.extend(more_possible_moves)
+        next_moviments = list(set(next_moviments))  # remove duplicates
+        return next_moviments
+
+    return valid_movements
 
 
 def generate_board_matrix(natural_board=False):
