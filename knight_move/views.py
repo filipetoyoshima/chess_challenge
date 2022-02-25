@@ -36,28 +36,48 @@ def get_board(request, type='string'):
 
 
 def get_horse_movements(
-    request, piece_id
+    request, origin
 ):
     force_origin = request.GET.get('force_origin', False) == 'true'
     allow_capture = request.GET.get('allow_capture', False) == 'true'
     natural_notation = request.GET.get('natural_notation', False) == 'true'
     steps = int(request.GET.get('steps', '1'))
 
-    print(allow_capture)
-
     if request.method != 'GET':
         return HttpResponse(status=405)
 
-    piece = Piece.objects.get(id=piece_id)
-    if not piece:
-        return HttpResponse(status=404, content='Piece not found')
-    if piece.type != 'n' and not force_origin:
-        return HttpResponse(status=400, content='Piece is not a knight')
+    if origin.isdigit():
+        piece = Piece.objects.get(id=origin)
+        if not piece:
+            return HttpResponse(status=404, content='Piece not found')
+        if piece.type != 'n' and not force_origin:
+            return HttpResponse(status=400, content='Piece is not a knight')
+        x = piece.x_coord
+        y = piece.y_coord
+        originColor = 'w' if piece.color else 'b'
+
+    elif (origin[0] in 'wb' and
+          origin[1] in 'abcdefghABCDEFGH' and
+          origin[2] in '12345678'):
+        if origin[1].isupper():
+            x = ord(origin[1]) - ord('A')
+        else:
+            x = ord(origin[1]) - ord('a')
+        y = int(origin[2]) - 1
+        originColor = origin[0]
+
+    elif (origin[0] in 'abcdefghABCDEFGH' and origin[1] in '12345678'):
+        if origin[0].isupper():
+            x = ord(origin[0]) - ord('A')
+        else:
+            x = ord(origin[0]) - ord('a')
+        y = int(origin[1]) - 1
+        originColor = 'other'  # allow capture for any color
+
+    else:
+        return HttpResponse(status=400, content='Invalid origin')
 
     piece_matrix = generate_board_matrix()
-    x = piece.x_coord
-    y = piece.y_coord
-    originColor = 'w' if piece.color else 'b'
     valid_movements = calc_horse_movement(
         x, y, piece_matrix, allow_capture, steps, originColor
     )
