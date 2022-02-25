@@ -40,4 +40,4 @@ class Piece(models.Model):
     def __str__(self):
         color = 'White' if self.color else 'Black'
         columnName = chr(self.x_coord + ord('A'))
-        return f'{color}_{self.type}{columnName}{self.y_coord + 1}'
+        return f'{color}_{self.type.upper()}{columnName}{self.y_coord + 1}'
