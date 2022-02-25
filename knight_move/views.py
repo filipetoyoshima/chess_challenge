@@ -2,6 +2,8 @@ from django.http import HttpResponse
 import json
 from .models import Piece
 
+memoized_horse_movements = {}
+
 
 def register_piece(request):
     if request.method != 'POST':
@@ -96,9 +98,16 @@ def get_knight_movements(
         else:
             return HttpResponse(status=400, content='Invalid origin')
 
-        piece_matrix = generate_board_matrix()
+        if allow_capture:
+            if originColor == 'other':
+                piece_matrix = generate_board_matrix(get_pieces=False)
+            else:
+                excludeColor = True if originColor == 'b' else False
+                piece_matrix = generate_board_matrix(exclude_color=excludeColor)
+        else:
+            piece_matrix = generate_board_matrix()
         valid_movements = calc_horse_movement(
-            x, y, piece_matrix, allow_capture, steps, originColor
+            x, y, piece_matrix, steps
         )
 
         if natural_notation:
@@ -108,8 +117,8 @@ def get_knight_movements(
 
         return HttpResponse(status=200, content=json.dumps(valid_movements))
 
-    except Exception:  # pragma: no cover
-        return HttpResponse(status=500, content='Internal server error')
+    except Exception as e:  # pragma: no cover
+        return HttpResponse(status=500, content=str(e))
 
     # if I knew what exception to catch, I would have caught it propperly
     # since this code is designed to catch unexpected exceptions,
@@ -117,8 +126,9 @@ def get_knight_movements(
 
 
 def calc_horse_movement(
-    x, y, piece_matrix, allow_capture=False, remmaing_steps=1, originColor='w'
+    x, y, piece_matrix, remmaing_steps=1
 ):
+
     _piece_matrix = piece_matrix.copy()
     valid_movements = []
     for x_offset, y_offset in [
@@ -129,10 +139,6 @@ def calc_horse_movement(
         if 0 <= x_destination <= 7 and 0 <= y_destination <= 7:
             if _piece_matrix[y_destination][x_destination] == '__':
                 valid_movements.append((x_destination, y_destination))
-            elif (allow_capture and
-                  (_piece_matrix[y_destination][x_destination][0] !=
-                   originColor)):
-                valid_movements.append((x_destination, y_destination))
 
     # just for the record: this elif is horrible, but flake8 seems to like it
 
@@ -142,8 +148,7 @@ def calc_horse_movement(
             _new_piece_matrix = piece_matrix.copy()
             _new_piece_matrix[x][y] = '__'
             more_possible_moves = calc_horse_movement(
-                movement[0], movement[1], _piece_matrix, allow_capture,
-                remmaing_steps - 1, originColor
+                movement[0], movement[1], _piece_matrix, remmaing_steps - 1
             )
             next_moviments.extend(more_possible_moves)
         next_moviments = list(set(next_moviments))  # remove duplicates
@@ -152,9 +157,16 @@ def calc_horse_movement(
     return valid_movements
 
 
-def generate_board_matrix(natural_board=False):
+def generate_board_matrix(natural_board=False, get_pieces=True, exclude_color=None):
     matrix = [['__' for _ in range(8)] for _ in range(8)]
-    for piece in Piece.objects.all():
+    if not get_pieces:
+        return matrix
+    if exclude_color is not None:
+        color_to_keep = not exclude_color
+        pieces = Piece.objects.filter(color=color_to_keep)
+    else:
+        pieces = Piece.objects.all()
+    for piece in pieces:
         y = 7 - piece.y_coord if natural_board else piece.y_coord
         matrix[y][piece.x_coord] = \
             f'{"w" if piece.color else "b"}{piece.type.upper()}'
