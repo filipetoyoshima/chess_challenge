@@ -35,7 +35,7 @@ def get_board(request, type='string'):
         return HttpResponse(status=400, content='Invalid type')
 
 
-def get_horse_movements(
+def get_knight_movements(
     request, origin
 ):
     force_origin = request.GET.get('force_origin', False) == 'true'
