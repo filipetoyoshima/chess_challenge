@@ -52,12 +52,6 @@ def get_knight_movements(
         except ValueError:
             return HttpResponse(status=400, content='Invalid steps')
 
-        if steps > 10:
-            return HttpResponse(status=400, content=(
-                'Too many steps. Do wanna broke me, mate?'
-                'Try with less then 10'
-            ))
-
         if steps < 1:
             return HttpResponse(status=400, content=(
                 'Steps must be greater than 0'
@@ -136,22 +130,22 @@ def calc_horse_movement(
 ):
     global memoized_knight_movements
     if (x, y) in memoized_knight_movements:
-        valid_movements = memoized_knight_movements[(x, y)]
-    else:
-        valid_movements = []
-        for x_offset, y_offset in [
-            (-1, 2), (-2, 1), (-2, -1), (-1, -2),
-            (1, -2), (2, -1), (2, 1), (1, 2)
-        ]:
-            x_destination = x + x_offset
-            y_destination = y + y_offset
-            if 0 <= x_destination <= 7 and 0 <= y_destination <= 7:
-                if piece_matrix[y_destination][x_destination] == '__':
-                    valid_movements.append((x_destination, y_destination))
-        # just for the record: this elif is horrible
-        # but flake8 seems to like it
+        return memoized_knight_movements[(x, y)]
 
-        memoized_knight_movements[(x, y)] = valid_movements
+    valid_movements = []
+    for x_offset, y_offset in [
+        (-1, 2), (-2, 1), (-2, -1), (-1, -2),
+        (1, -2), (2, -1), (2, 1), (1, 2)
+    ]:
+        x_destination = x + x_offset
+        y_destination = y + y_offset
+        if 0 <= x_destination <= 7 and 0 <= y_destination <= 7:
+            if piece_matrix[y_destination][x_destination] == '__':
+                valid_movements.append((x_destination, y_destination))
+    # just for the record: this elif is horrible
+    # but flake8 seems to like it
+
+    memoized_knight_movements[(x, y)] = valid_movements
 
     if remmaing_steps > 1:
         next_moviments = []
