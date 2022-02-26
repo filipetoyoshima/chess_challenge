@@ -2,7 +2,7 @@ from django.http import HttpResponse
 import json
 from .models import Piece
 
-memoized_horse_movements = {}
+memoized_knight_movements = {}
 
 
 def register_piece(request):
@@ -103,7 +103,9 @@ def get_knight_movements(
                 piece_matrix = generate_board_matrix(get_pieces=False)
             else:
                 excludeColor = True if originColor == 'b' else False
-                piece_matrix = generate_board_matrix(exclude_color=excludeColor)
+                piece_matrix = generate_board_matrix(
+                    exclude_color=excludeColor
+                )
         else:
             piece_matrix = generate_board_matrix()
         valid_movements = calc_horse_movement(
@@ -128,19 +130,24 @@ def get_knight_movements(
 def calc_horse_movement(
     x, y, piece_matrix, remmaing_steps=1
 ):
+    global memoized_knight_movements
+    if (x, y) in memoized_knight_movements:
+        valid_movements = memoized_knight_movements[(x, y)]
+    else:
+        valid_movements = []
+        for x_offset, y_offset in [
+            (-1, 2), (-2, 1), (-2, -1), (-1, -2),
+            (1, -2), (2, -1), (2, 1), (1, 2)
+        ]:
+            x_destination = x + x_offset
+            y_destination = y + y_offset
+            if 0 <= x_destination <= 7 and 0 <= y_destination <= 7:
+                if piece_matrix[y_destination][x_destination] == '__':
+                    valid_movements.append((x_destination, y_destination))
+        # just for the record: this elif is horrible
+        # but flake8 seems to like it
 
-    _piece_matrix = piece_matrix.copy()
-    valid_movements = []
-    for x_offset, y_offset in [
-        (-1, 2), (-2, 1), (-2, -1), (-1, -2), (1, -2), (2, -1), (2, 1), (1, 2)
-    ]:
-        x_destination = x + x_offset
-        y_destination = y + y_offset
-        if 0 <= x_destination <= 7 and 0 <= y_destination <= 7:
-            if _piece_matrix[y_destination][x_destination] == '__':
-                valid_movements.append((x_destination, y_destination))
-
-    # just for the record: this elif is horrible, but flake8 seems to like it
+        memoized_knight_movements[(x, y)] = valid_movements
 
     if remmaing_steps > 1:
         next_moviments = []
@@ -148,16 +155,20 @@ def calc_horse_movement(
             _new_piece_matrix = piece_matrix.copy()
             _new_piece_matrix[x][y] = '__'
             more_possible_moves = calc_horse_movement(
-                movement[0], movement[1], _piece_matrix, remmaing_steps - 1
+                movement[0], movement[1], piece_matrix, remmaing_steps - 1
             )
             next_moviments.extend(more_possible_moves)
         next_moviments = list(set(next_moviments))  # remove duplicates
         return next_moviments
 
+    # cleaning memoized results
+    memoized_knight_movements = {}
     return valid_movements
 
 
-def generate_board_matrix(natural_board=False, get_pieces=True, exclude_color=None):
+def generate_board_matrix(
+    natural_board=False, get_pieces=True, exclude_color=None
+):
     matrix = [['__' for _ in range(8)] for _ in range(8)]
     if not get_pieces:
         return matrix
