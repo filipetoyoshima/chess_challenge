@@ -4,6 +4,16 @@ This is a study case with [Django](https://www.djangoproject.com/) that can do a
 
 # Build and Run
 
+## With Docker
+
+It's possible to use [Docker](https://www.docker.com/) and [Docker Compose](https://docs.docker.com/compose/) to install all dependencies and run the project. To do so, just:
+
+```
+docker-compose up --build
+```
+
+## Without Docker
+
 You can downloads all the dependencies with [pip](https://pypi.org/project/pip/). It is strongly recomended that you use a [virtual env](https://docs.python.org/3/library/venv.html) to do so. Just clone this repository, go into its root directory and:
 
 ```bash
