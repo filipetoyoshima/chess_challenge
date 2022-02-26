@@ -108,6 +108,10 @@ def get_knight_movements(
                 )
         else:
             piece_matrix = generate_board_matrix()
+
+        global memoized_knight_movements
+        memoized_knight_movements = {}
+        piece_matrix[y][x] = '__'  # knight is going to move
         valid_movements = calc_horse_movement(
             x, y, piece_matrix, steps
         )
@@ -152,8 +156,6 @@ def calc_horse_movement(
     if remmaing_steps > 1:
         next_moviments = []
         for movement in valid_movements:
-            _new_piece_matrix = piece_matrix.copy()
-            _new_piece_matrix[x][y] = '__'
             more_possible_moves = calc_horse_movement(
                 movement[0], movement[1], piece_matrix, remmaing_steps - 1
             )
@@ -161,8 +163,6 @@ def calc_horse_movement(
         next_moviments = list(set(next_moviments))  # remove duplicates
         return next_moviments
 
-    # cleaning memoized results
-    memoized_knight_movements = {}
     return valid_movements
 
 
